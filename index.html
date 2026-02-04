@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mini Uzum — Realistic Demo</title>
+  <style>
+    :root{--bg:#f6f8fb;--card:#fff;--muted:#6b7280;--accent1:#2a9df4;--accent2:#8b5cf6;--radius:12px}
+    *{box-sizing:border-box}body{font-family:Inter,system-ui,Arial,sans-serif;margin:0;background:var(--bg);color:#0f1724}
+    a{text-decoration:none;color:inherit}
+    .container{max-width:1200px;margin:18px auto;padding:0 16px}
+
+    /* Header */
+    header{display:flex;align-items:center;gap:12px;padding:14px 0}
+    .logo{display:flex;gap:10px;align-items:center}
+    .logo .mark{width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,var(--accent1),var(--accent2));display:grid;place-items:center;color:#fff;font-weight:800;font-size:20px}
+    .brand{font-weight:800;font-size:18px}
+    .search-wrap{flex:1;display:flex;gap:8px;align-items:center}
+    .search-wrap input{flex:1;padding:12px;border-radius:14px;border:1px solid #e8f1ff}
+    .search-wrap button{padding:11px 14px;border-radius:12px;border:none;background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#fff}
+
+    .top-actions{display:flex;gap:8px;align-items:center}
+    .top-actions button{padding:8px 10px;border-radius:10px;border:1px solid #eef6ff;background:#fff}
+
+    /* layout */
+    .row{display:grid;grid-template-columns:260px 1fr;gap:18px}
+    @media(max-width:960px){.row{grid-template-columns:1fr}header{flex-direction:column;align-items:stretch}.search-wrap{order:2}}
+
+    /* sidebar */
+    .sidebar{background:var(--card);border-radius:var(--radius);padding:14px;border:1px solid #eef7ff}
+    .category{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;cursor:pointer}
+    .category img{width:28px;height:28px;border-radius:6px}
+
+    /* products */
+    .products{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+    .card{background:var(--card);border-radius:12px;padding:10px;border:1px solid #eef7ff;display:flex;flex-direction:column;gap:8px}
+    .thumb{height:160px;border-radius:10px;overflow:hidden;background:#f8fafc}
+    .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .title{font-weight:700;font-size:15px}
+    .desc{color:var(--muted);font-size:13px}
+    .price{font-weight:800;color:#0b6bff}
+    .row-between{display:flex;justify-content:space-between;align-items:center}
+    .badge{padding:6px 8px;border-radius:10px;background:#fffbeb;border:1px solid #fbe7c6;font-size:12px}
+
+    /* cart drawer */
+    .cart-drawer{position:fixed;right:18px;bottom:18px;background:var(--card);border:1px solid #eef7ff;border-radius:14px;padding:12px;width:380px;box-shadow:0 18px 40px rgba(12,22,41,0.12);display:none}
+    .cart-item{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px dashed #f1f7ff}
+
+    /* modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(6,12,30,0.45);display:none;align-items:center;justify-content:center;padding:16px;z-index:60}
+    .modal{background:var(--card);border-radius:12px;padding:18px;max-width:900px;width:100%;max-height:90vh;overflow:auto}
+
+    footer{text-align:center;margin-top:18px;color:var(--muted);font-size:13px}
+
+    .primary{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#fff;border:none;padding:10px;border-radius:10px}
+    .outline{background:#fff;border:1px solid #eef6ff;padding:10px;border-radius:10px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo"><div class="mark">U</div><div><div class="brand">Mini Uzum</div><div style="font-size:12px;color:var(--muted)">Реалистичный демо-магазин</div></div></div>
+      <div class="search-wrap">
+        <input id="search" placeholder="Поиск: товары, бренды, категории..." autocomplete="off" />
+        <button id="searchBtn">Найти</button>
+      </div>
+      <div class="top-actions">
+        <button id="favorites">♡ Избранное</button>
+        <button id="open-cart-top">Корзина (<span id="cart-count">0</span>)</button>
+        <div id="profileArea"></div>
+      </div>
+    </header>
+
+    <div class="row">
+      <aside class="sidebar">
+        <div style="font-weight:700;margin-bottom:10px">Категории</div>
+        <div id="categories"></div>
+        <hr style="margin:12px 0;border:none;border-top:1px dashed #eef7ff" />
+        <div style="font-weight:700;margin-bottom:8px">Фильтр</div>
+        <input id="min-price" placeholder="Мин цена" style="width:100%;margin-bottom:8px;padding:8px;border-radius:8px;border:1px solid #eef6ff" />
+        <input id="max-price" placeholder="Макс цена" style="width:100%;margin-bottom:8px;padding:8px;border-radius:8px;border:1px solid #eef6ff" />
+        <button id="apply-filter" class="primary" style="width:100%">Применить</button>
+      </aside>
+
+      <main>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div style="font-weight:700">Популярные товары</div>
+          <div style="color:var(--muted);font-size:13px">Поиск с подсказками и быстрая покупка</div>
+        </div>
+        <div id="products" class="products"></div>
+      </main>
+    </div>
+
+    <footer>Демо-магазин — платежи и логины эмулированы. Не используйте реальные карточки.</footer>
+  </div>
+
+  <!-- cart drawer -->
+  <div id="cartDrawer" class="cart-drawer">
+    <div style="display:flex;justify-content:space-between;align-items:center"><strong>Корзина</strong><button id="close-cart">✕</button></div>
+    <div id="cartItems" style="margin-top:10px;max-height:300px;overflow:auto"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><div style="color:var(--muted)">Итого</div><div id="cartTotal">0 сум</div></div>
+    <div style="margin-top:10px;display:flex;gap:8px"><button id="btn-checkout" class="primary" style="flex:1">Оформить</button><button id="btn-clear" class="outline" style="flex:1">Очистить</button></div>
+  </div>
+
+  <!-- modal -->
+  <div id="backdrop" class="modal-backdrop"><div class="modal" id="modalContent"></div></div>
+
+  <script>
+    // Realistic images from Unsplash (placeholder usage)
+    const IMAGE_BASE = 'https://images.unsplash.com';
+    const IMG = [
+      IMAGE_BASE + '/photo-1511707171634-5f897ff02aa9?w=800&q=80&auto=format&fit=crop',
+      IMAGE_BASE + '/photo-1518449076779-3a0b9b8b1b9b?w=800&q=80&auto=format&fit=crop',
+      IMAGE_BASE + '/photo-1527443154391-507e9dc6c5cc?w=800&q=80&auto=format&fit=crop',
+      IMAGE_BASE + '/photo-1503602642458-232111445657?w=800&q=80&auto=format&fit=crop',
+      IMAGE_BASE + '/photo-1519744792095-2f2205e87b6f?w=800&q=80&auto=format&fit=crop',
+      IMAGE_BASE + '/photo-1542291026-7eec264c27ff?w=800&q=80&auto=format&fit=crop',
+      IMAGE_BASE + '/photo-1580910051072-6a4b0f0d9c4d?w=800&q=80&auto=format&fit=crop',
+      IMAGE_BASE + '/photo-1558980664-10e717a6f558?w=800&q=80&auto=format&fit=crop',
+      IMAGE_BASE + '/photo-1540574163026-643ea20ade25?w=800&q=80&auto=format&fit=crop',
+      IMAGE_BASE + '/photo-1515524738708-327f6b0037a7?w=800&q=80&auto=format&fit=crop'
+    ];
+
+    const PRODUCTS = [
+      {id:1,title:'Смартфон X100',price:129900,cat:'Электроника',desc:'Экран 6.5" • 128GB • 8GB RAM',img:IMG[0],rating:4.6,tag:'Хит'},
+      {id:2,title:'Наушники Beats Pro',price:24990,cat:'Аксессуары',desc:'Шумоподавление • Bluetooth',img:IMG[1],rating:4.2,tag:'-20%'},
+      {id:3,title:'Ноутбук Work 14',price:489900,cat:'Компьютеры',desc:'i5 • 16GB RAM • 512GB SSD',img:IMG[2],rating:4.7,tag:'Новый'},
+      {id:4,title:'Кофеварка HomeBrew',price:15990,cat:'Дом',desc:'Капельная • 1.5L',img:IMG[3],rating:4.1,tag:'-10%'},
+      {id:5,title:'Кроссовки RunFast',price:8990,cat:'Одежда',desc:'Для бега • амортизация',img:IMG[4],rating:4.3,tag:'Популярно'},
+      {id:6,title:'Игровая мышь ProClick',price:4590,cat:'Аксессуары',desc:'16000 DPI • RGB',img:IMG[5],rating:4.4,tag:'Акция'},
+      {id:7,title:'Смарт-часы TimeFit',price:19990,cat:'Электроника',desc:'Пульсометр • уведомления',img:IMG[6],rating:4.0,tag:'-5%'},
+      {id:8,title:'Рюкзак Urban',price:6990,cat:'Аксессуары',desc:'Водонепроницаемый • 20L',img:IMG[7],rating:4.5,tag:'Хит'},
+      {id:9,title:'Телевизор 42" LED',price:249900,cat:'Электроника',desc:'FullHD • SmartTV',img:IMG[8],rating:4.6,tag:'Тренд'},
+      {id:10,title:'Стол для работы',price:32990,cat:'Дом',desc:'Регулируемый • 120x60cm',img:IMG[9],rating:4.2,tag:'-15%'}
+    ];
+
+    // state
+    let products = [...PRODUCTS];
+    let cart = JSON.parse(localStorage.getItem('mini_cart')||'[]');
+    let usersDB = JSON.parse(localStorage.getItem('mini_users')||'{}');
+    let user = JSON.parse(localStorage.getItem('mini_user')||'null');
+
+    // refs
+    const $products = document.getElementById('products');
+    const $search = document.getElementById('search');
+    const $categories = document.getElementById('categories');
+
+    function money(n){ return n.toLocaleString('ru-RU') + ' сум' }
+
+    function renderProfile(){
+      const root = document.getElementById('profileArea'); root.innerHTML='';
+      if(user){
+        const d = document.createElement('div'); d.style.display='flex'; d.style.alignItems='center'; d.style.gap='8px';
+        const ava = document.createElement('div'); ava.style.width='40px'; ava.style.height='40px'; ava.style.borderRadius='10px'; ava.style.background='#eef2ff'; ava.style.display='grid'; ava.style.placeItems='center'; ava.textContent=(user.name||user.email||user.phone||'U')[0].toUpperCase();
+        const out = document.createElement('button'); out.className='outline'; out.textContent='Выйти'; out.onclick=()=>{ if(confirm('Выйти?')){ user=null; localStorage.removeItem('mini_user'); renderProfile(); } };
+        d.appendChild(ava); d.appendChild(out); root.appendChild(d);
+      } else {
+        const btn = document.createElement('button'); btn.className='primary'; btn.textContent='Войти'; btn.onclick = showAuthChoice; root.appendChild(btn);
+      }
+    }
+
+    function renderCategories(){
+      const cats = ['Все', ...new Set(PRODUCTS.map(p=>p.cat))]; $categories.innerHTML='';
+      const icons = { 'Электроника':'https://images.unsplash.com/photo-1510557880182-3d4d3f0b9c22?w=80', 'Аксессуары':'https://images.unsplash.com/photo-1526178611533-6e88fb4d3f74?w=80', 'Компьютеры':'https://images.unsplash.com/photo-1518779578993-ec3579fee39f?w=80', 'Дом':'https://images.unsplash.com/photo-1505691723518-36a74e1b9a8d?w=80', 'Одежда':'https://images.unsplash.com/photo-1520975698516-3d1b6f1b1e3d?w=80' };
+      cats.forEach(c=>{
+        const el = document.createElement('div'); el.className='category';
+        const img = document.createElement('img'); img.src = icons[c] || icons['Аксессуары']; img.alt='';
+        const span = document.createElement('div'); span.textContent = c; el.appendChild(img); el.appendChild(span);
+        el.onclick = ()=>filterByCategory(c);
+        $categories.appendChild(el);
+      })
+    }
+
+    function renderProducts(list){ $products.innerHTML=''; list.forEach(p=>{
+      const card = document.createElement('div'); card.className='card';
+      card.innerHTML = `
+        <div class="thumb"><img src="${p.img}" alt="${p.title}"/></div>
+        <div style="display:flex;justify-content:space-between;align-items:center"><div style="flex:1;margin-right:8px"><div class="title">${p.title}</div><div class="desc">${p.desc}</div></div><div style="text-align:right"><div class="price">${money(p.price)}</div><div class="desc">⭐ ${p.rating}</div></div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center"><div class="badge">${p.tag}</div><div><button data-id="${p.id}" class="outline add-btn">В корзину</button> <button data-id="${p.id}" class="primary view-btn">Подробнее</button></div></div>
+      `;
+      $products.appendChild(card);
+    });
+      document.querySelectorAll('.add-btn').forEach(b=>b.onclick=()=>addToCart(Number(b.dataset.id)));
+      document.querySelectorAll('.view-btn').forEach(b=>b.onclick=()=>openProductModal(Number(b.dataset.id)));
+    }
+
+    function filterByCategory(cat){ if(cat==='Все') products=[...PRODUCTS]; else products = PRODUCTS.filter(p=>p.cat===cat); applyFilters(); }
+
+    function applyFilters(){ let list=[...products]; const q = $search.value.trim().toLowerCase(); if(q) list = list.filter(p=> (p.title + ' ' + p.desc + ' ' + p.cat).toLowerCase().includes(q)); const min = parseFloat(document.getElementById('min-price').value) || 0; const max = parseFloat(document.getElementById('max-price').value) || Infinity; list = list.filter(p=>p.price>=min && p.price<=max); renderProducts(list); }
+
+    // search suggestions simplified: show console suggestions (keeps file small)
+    $search.addEventListener('input', ()=>{ /* could implement dropdown suggestions */ applyFilters(); }); document.getElementById('searchBtn').addEventListener('click', applyFilters);
+
+    // cart
+    function saveCart(){ localStorage.setItem('mini_cart', JSON.stringify(cart)); renderCart(); }
+    function addToCart(id){ if(!user){ showAuthChoice(); return } const item = PRODUCTS.find(p=>p.id===id); const found = cart.find(c=>c.id===id); if(found) found.qty++; else cart.push({id:item.id,title:item.title,price:item.price,qty:1}); saveCart(); alert('Добавлено в корзину'); }
+
+    function renderCart(){ document.querySelectorAll('#cart-count').forEach(el=>el.textContent = cart.reduce((s,i)=>s+i.qty,0)); const $cartItems = document.getElementById('cartItems'); $cartItems.innerHTML=''; cart.forEach(c=>{ const div = document.createElement('div'); div.className='cart-item'; div.innerHTML = `<div style="display:flex;gap:8px;align-items:center"><div style="width:56px;height:56px;background:#f3f6ff;border-radius:8px;display:grid;place-items:center">🛒</div><div style="flex:1"><div style="font-weight:700">${c.title}</div><div style="color:var(--muted)">${money(c.price)}</div></div><div style="text-align:right">x${c.qty}</div></div>`; $cartItems.appendChild(div); }); document.getElementById('cartTotal').textContent = money(cart.reduce((s,i)=>s+i.price*i.qty,0)); }
+
+    // modal helpers
+    const backdrop = document.getElementById('backdrop'); const modalContent = document.getElementById('modalContent'); function showModal(html){ modalContent.innerHTML = html; backdrop.style.display = 'flex'; } function closeModal(){ backdrop.style.display = 'none'; modalContent.innerHTML = ''; } backdrop.addEventListener('click', (e)=>{ if(e.target===backdrop) closeModal(); });
+
+    // auth (email / phone / google emu)
+    function showAuthChoice(){ showModal(`
+      <h2>Вход или регистрация</h2>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button id="auth-email" class="primary" style="flex:1">Email</button>
+        <button id="auth-phone" class="outline" style="flex:1">Телефон</button>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px"><button id="auth-google" class="outline" style="flex:1">Вход через Google (эмуляция)</button></div>
+    `); setTimeout(()=>{ document.getElementById('auth-email').onclick=showEmailAuth; document.getElementById('auth-phone').onclick=showPhoneAuth; document.getElementById('auth-google').onclick=googleAuth; },20); }
+
+    function showEmailAuth(){ showModal(`
+      <h2>Вход / Регистрация — Email</h2>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+        <input id="auth-email-input" type="email" placeholder="Email" />
+        <input id="auth-pass-input" type="password" placeholder="Пароль (мин 4)" />
+        <div style="display:flex;gap:8px">
+          <button id="email-login" class="primary" style="flex:1">Войти</button>
+          <button id="email-register" class="outline" style="flex:1">Зарегистрироваться</button>
+        </div>
+      </div>
+    `); setTimeout(()=>{
+      document.getElementById('email-register').onclick = ()=>{ const email = document.getElementById('auth-email-input').value.trim().toLowerCase(); const pass = document.getElementById('auth-pass-input').value; if(!email||!pass||pass.length<4){alert('Введите корректные данные');return} if(usersDB[email]){alert('Пользователь существует');return} usersDB[email]={email,password:pass,name:email.split('@')[0]}; localStorage.setItem('mini_users',JSON.stringify(usersDB)); user=Object.assign({},usersDB[email]); localStorage.setItem('mini_user',JSON.stringify(user)); renderProfile(); closeModal(); alert('Регистрация успешна'); };
+      document.getElementById('email-login').onclick = ()=>{ const email = document.getElementById('auth-email-input').value.trim().toLowerCase(); const pass = document.getElementById('auth-pass-input').value; const found = usersDB[email]; if(found && found.password===pass){ user=Object.assign({},found); localStorage.setItem('mini_user',JSON.stringify(user)); renderProfile(); closeModal(); alert('Вход успешен'); } else alert('Неверный email или пароль'); };
+    },20); }
+
+    function showPhoneAuth(){ showModal(`
+      <h2>Вход / Регистрация — Телефон</h2>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+        <input id="auth-phone-input" type="tel" placeholder="+998901234567" />
+        <div style="display:flex;gap:8px">
+          <button id="phone-send" class="primary" style="flex:1">Отправить код</button>
+          <button id="phone-login" class="outline" style="flex:1">Вход по коду</button>
+        </div>
+        <div style="color:var(--muted);font-size:13px">В демо код — <strong>1234</strong></div>
+      </div>
+    `); setTimeout(()=>{
+      document.getElementById('phone-send').onclick = ()=>{ const phone = document.getElementById('auth-phone-input').value.trim(); if(!phone){alert('Введите телефон');return} showModal(`<h2>Введите код</h2><div style="margin-top:8px;color:var(--muted)">Мы отправили код на ${phone} (демо код 1234)</div><input id="code-input" placeholder="Код" style="margin-top:8px" /><div style="display:flex;gap:8px;margin-top:8px"><button id="verify-code" class="primary">Подтвердить</button><button id="cancel-code" class="outline">Отмена</button></div>`); setTimeout(()=>{ document.getElementById('verify-code').onclick = ()=>{ const code = document.getElementById('code-input').value.trim(); if(code!=='1234'){alert('Неверный код');return} usersDB[phone]={phone,name:phone.replace(/[^0-9]/g,'')}; localStorage.setItem('mini_users',JSON.stringify(usersDB)); user=Object.assign({},usersDB[phone]); localStorage.setItem('mini_user',JSON.stringify(user)); renderProfile(); closeModal(); alert('Вход по телефону успешен'); }; document.getElementById('cancel-code').onclick=()=>{ showAuthChoice(); }; },20); };
+      document.getElementById('phone-login').onclick = ()=>{ alert('Нажмите "Отправить код" чтобы получить код 1234'); };
+    },20); }
+
+    function googleAuth(){ showModal(`<h2>Вход через Google (эмуляция)</h2><div style="margin-top:8px;display:flex;gap:8px"><input id="google-email" placeholder="Email" /><button id="google-go" class="primary">Войти</button></div>`); setTimeout(()=>{ document.getElementById('google-go').onclick = ()=>{ const em = document.getElementById('google-email').value.trim().toLowerCase(); if(!em){alert('Введите email');return} usersDB[em]={email:em,name:em.split('@')[0]}; user=Object.assign({},usersDB[em]); localStorage.setItem('mini_users',JSON.stringify(usersDB)); localStorage.setItem('mini_user',JSON.stringify(user)); renderProfile(); closeModal(); alert('Вход через Google (демо)'); }; },20); }
+
+    // product modal
+    function openProductModal(id){ const p = PRODUCTS.find(x=>x.id===id); if(!p) return; showModal(`
+      <div style="display:flex;gap:18px;flex-wrap:wrap">
+        <div style="flex:1;min-width:280px"><img src="${p.img}" alt="${p.title}" style="width:100%;border-radius:10px;object-fit:cover"/></div>
+        <div style="flex:1;min-width:260px"><h2>${p.title}</h2><div style="color:var(--muted)">${p.desc}</div><div style="font-weight:800;margin-top:8px">${money(p.price)}</div><div style="margin-top:12px;display:flex;gap:8px"><input id="qty" type="number" value="1" min="1" style="width:80px;padding:8px;border-radius:8px;border:1px solid #eef6ff"/><button id="add-now" class="primary">Добавить в корзину</button><button id="buy-now" class="outline">Купить</button></div></div>
+      </div>
+    `); setTimeout(()=>{ document.getElementById('add-now').onclick = ()=>{ const qty = Number(document.getElementById('qty').value)||1; if(!user){ showAuthChoice(); return } const found = cart.find(c=>c.id===p.id); if(found) found.qty += qty; else cart.push({id:p.id,title:p.title,price:p.price,qty:qty}); saveCart(); closeModal(); alert('Добавлено в корзину'); }; document.getElementById('buy-now').onclick = ()=>{ if(!user){ showAuthChoice(); return } const qty = Number(document.getElementById('qty').value)||1; const found = cart.find(c=>c.id===p.id); if(found) found.qty += qty; else cart.push({id:p.id,title:p.title,price:p.price,qty:qty}); saveCart(); closeModal(); document.getElementById('cartDrawer').style.display='block'; }; },20); }
+
+    // checkout (fake)
+    document.getElementById('btn-checkout').addEventListener('click', ()=>{ if(!user){ showAuthChoice(); return } if(cart.length===0){ alert('Корзина пуста'); return } showModal(`<h2>Оформление заказа</h2><div style="color:var(--muted)">Покупатель: <strong>${user.email||user.phone||user.name}</strong></div><div style="margin-top:8px">Сумма: <strong>${money(cart.reduce((s,i)=>s+i.price*i.qty,0))}</strong></div><hr/><div style="display:flex;flex-direction:column;gap:8px"><input id='card' placeholder='Номер карты (16 цифр)' /><input id='name' placeholder='Имя на карте' /><div style='display:flex;gap:8px'><input id='mm' placeholder='MM' style='width:80px' /><input id='yy' placeholder='YY' style='width:80px' /><input id='cvv' placeholder='CVV' style='width:120px' /></div><button id='pay' class='primary'>Оплатить</button></div>`); setTimeout(()=>{ document.getElementById('pay').onclick = ()=>{ const card = document.getElementById('card').value.replace(/\s/g,''); const name = document.getElementById('name').value.trim(); const mm = document.getElementById('mm').value; const yy = document.getElementById('yy').value; const cvv = document.getElementById('cvv').value; if(!/^[0-9]{16}$/.test(card)){ alert('Неверный номер карты'); return } if(!name||!/^[0-9]{2}$/.test(mm)||!/^[0-9]{2}$/.test(yy)||!/^[0-9]{3,4}$/.test(cvv)){ alert('Заполните поля платежа корректно'); return } const order = {id:Date.now(),user:user.email||user.phone,total:cart.reduce((s,i)=>s+i.price*i.qty,0),items:cart}; cart=[]; saveCart(); closeModal(); alert('Оплата успешна! Заказ №'+order.id+' (демо)'); }; },20); });
+
+    // cart handlers
+    document.getElementById('open-cart-top').addEventListener('click', ()=>{ document.getElementById('cartDrawer').style.display='block'; });
+    document.getElementById('close-cart').addEventListener('click', ()=>{ document.getElementById('cartDrawer').style.display='none'; });
+    document.getElementById('btn-clear').addEventListener('click', ()=>{ if(confirm('Очистить корзину?')){ cart=[]; saveCart(); } });
+
+    // init
+    renderCategories(); products = [...PRODUCTS]; renderProducts(products); renderCart(); renderProfile();
+    window.addEventListener('beforeunload', ()=>{ localStorage.setItem('mini_users', JSON.stringify(usersDB)); });
+  </script>
+</body>
+</html>
